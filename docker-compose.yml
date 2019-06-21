@@ -1,0 +1,23 @@
+version: "3.6"
+
+services:
+
+  sender:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rudp-sender
+    expose:
+      - 1337
+    command: java -jar start.jar -s
+    stop_signal: SIGKILL
+
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rudp-receiver
+    expose:
+      - 1337
+    command: java -jar start.jar -r
+    stop_signal: SIGKILL
