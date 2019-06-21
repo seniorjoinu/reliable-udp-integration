@@ -1,6 +1,5 @@
 import net.joinu.rudp.RUDPSocket
 import net.joinu.rudp.send
-import java.lang.RuntimeException
 import java.net.InetSocketAddress
 
 fun sender() {
@@ -11,7 +10,7 @@ fun sender() {
 
     println("Transmission started...")
 
-    sender.send(ByteArray(10) { it.toByte() }, InetSocketAddress("receiver", 1337)) { sent = true }
+    sender.send(ByteArray(10000) { it.toByte() }, InetSocketAddress("receiver", 1337)) { sent = true }
 
     while (!sent) {
         sender.runOnce()
