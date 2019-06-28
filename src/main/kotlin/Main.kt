@@ -1,39 +1,26 @@
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.joinu.rudp.RUDPSocket
+import net.joinu.rudp.runSuspending
 import net.joinu.rudp.send
 import java.net.InetSocketAddress
 
-fun sender() {
-    val sender = RUDPSocket()
-    sender.bind(InetSocketAddress(1337))
 
-    var sent = false
-
+suspend fun sender(socket: RUDPSocket) {
     println("Transmission started...")
 
-    sender.send(ByteArray(10000) { it.toByte() }, InetSocketAddress("receiver", 1337)) { sent = true }
-
-    while (!sent) {
-        sender.runOnce()
-    }
+    socket.send(ByteArray(10000) { it.toByte() }, InetSocketAddress("receiver", 1337))
 
     println("Transmission success!")
-    sender.close()
 }
 
-fun receiver() {
-    val receiver = RUDPSocket()
-    receiver.bind(InetSocketAddress(1337))
-
+suspend fun receiver(socket: RUDPSocket) {
     println("Receive started...")
 
-    while (true) {
-        receiver.runOnce()
-        val data = receiver.receive()
-        if (data != null) break
-    }
+    socket.receive()
 
     println("Receive success!")
-    receiver.close()
 }
 
 fun main(args: Array<String>) {
@@ -42,9 +29,20 @@ fun main(args: Array<String>) {
 
     System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
 
-    when {
-        args.first() == "-s" -> sender()
-        args.first() == "-r" -> receiver()
-        else -> throw RuntimeException("Invalid argument")
+    val socket = RUDPSocket()
+    socket.bind(InetSocketAddress(1337))
+
+    runBlocking {
+        launch { socket.runSuspending() }
+
+        when {
+            args.first() == "-s" -> sender(socket)
+            args.first() == "-r" -> receiver(socket)
+            else -> throw RuntimeException("Invalid argument")
+        }
+
+        coroutineContext.cancelChildren()
     }
+
+    socket.close()
 }
